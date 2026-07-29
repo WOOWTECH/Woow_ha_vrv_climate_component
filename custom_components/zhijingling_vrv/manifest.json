@@ -1,0 +1,11 @@
+{
+  "domain": "zhijingling_vrv",
+  "name": "ZhiJingLing VRV",
+  "codeowners": ["@WOOWTECH"],
+  "config_flow": true,
+  "documentation": "https://github.com/WOOWTECH/Woow_ha_vrv_climate_component",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/WOOWTECH/Woow_ha_vrv_climate_component/issues",
+  "requirements": ["pymodbus>=3.11.2"],
+  "version": "0.1.0"
+}
