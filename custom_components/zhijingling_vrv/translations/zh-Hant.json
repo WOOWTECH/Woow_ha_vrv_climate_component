@@ -1,0 +1,31 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "智精靈 VRV 閘道",
+        "data": {
+          "host": "閘道 IP",
+          "port": "Modbus TCP 埠",
+          "slave_id": "Modbus Slave ID"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "無法連線。請確認 IP，並確認閘道已啟用 Modbus TCP。",
+      "invalid_device": "已連線，但裝置看起來不是智精靈閘道。",
+      "unknown": "未預期的錯誤。"
+    },
+    "abort": {
+      "already_configured": "此閘道已被加入。"
+    }
+  },
+  "entity": {
+    "climate": {
+      "idu": { "name": "內機 {idu_id}" }
+    },
+    "sensor": {
+      "idu_total": { "name": "內機總數" },
+      "idu_online": { "name": "在線內機數" }
+    }
+  }
+}

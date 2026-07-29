@@ -1,0 +1,31 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ZhiJingLing VRV Gateway",
+        "data": {
+          "host": "Gateway IP",
+          "port": "Modbus TCP port",
+          "slave_id": "Modbus slave ID"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect. Check the IP and that Modbus TCP is enabled on the gateway.",
+      "invalid_device": "Connected but the device does not look like a ZhiJingLing gateway.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This gateway is already configured."
+    }
+  },
+  "entity": {
+    "climate": {
+      "idu": { "name": "IDU {idu_id}" }
+    },
+    "sensor": {
+      "idu_total": { "name": "IDU total" },
+      "idu_online": { "name": "IDUs online" }
+    }
+  }
+}
