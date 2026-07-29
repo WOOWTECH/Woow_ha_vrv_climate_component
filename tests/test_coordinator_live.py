@@ -35,9 +35,13 @@ async def test_live_gateway_write_roundtrip(hass):
         await coord.async_refresh()
         # Toggle IDU 0 setpoint 22 → 23 → back to original
         original = coord.data.idus[0].set_temp
-        await coord.async_write_idu(0, set_temp=23)
-        await coord.async_refresh()
-        assert coord.data.idus[0].set_temp == 23
-        await coord.async_write_idu(0, set_temp=original)
+        try:
+            await coord.async_write_idu(0, set_temp=23)
+            await coord.async_refresh()
+            assert coord.data.idus[0].set_temp == 23
+        finally:
+            # Always restore, even if the assertion above fails, so we do
+            # not leave the bench gateway in a modified state.
+            await coord.async_write_idu(0, set_temp=original)
     finally:
         client.close()

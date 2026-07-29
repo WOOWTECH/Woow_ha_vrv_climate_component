@@ -697,10 +697,14 @@ async def test_live_gateway_write_roundtrip(hass):
         await coord.async_refresh()
         # Toggle IDU 0 setpoint 22 → 23 → back to original
         original = coord.data.idus[0].set_temp
-        await coord.async_write_idu(0, set_temp=23)
-        await coord.async_refresh()
-        assert coord.data.idus[0].set_temp == 23
-        await coord.async_write_idu(0, set_temp=original)
+        try:
+            await coord.async_write_idu(0, set_temp=23)
+            await coord.async_refresh()
+            assert coord.data.idus[0].set_temp == 23
+        finally:
+            # Always restore, even if the assertion above fails, so we do
+            # not leave the bench gateway in a modified state.
+            await coord.async_write_idu(0, set_temp=original)
     finally:
         client.close()
 ```
@@ -862,7 +866,7 @@ async def _validate(hass: HomeAssistant, host: str, port: int, slave_id: int) ->
     try:
         if not await client.connect():
             raise CannotConnect
-        resp = await client.read_holding_registers(2000, count=6, slave=slave_id)
+        resp = await client.read_holding_registers(2000, count=6, device_id=slave_id)
         if resp.isError():
             raise InvalidDevice
         _brand, _pt, idu_total, *_ = resp.registers
