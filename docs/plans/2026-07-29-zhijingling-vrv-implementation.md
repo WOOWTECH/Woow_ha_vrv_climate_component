@@ -635,7 +635,7 @@ class ZhijinglingCoordinator(DataUpdateCoordinator[CoordinatorData]):
         resp = await self.client.write_registers(addr, payload, self.slave_id)
         if resp.isError():
             raise RuntimeError(f"Modbus write {addr} failed: {resp}")
-        await self.async_request_refresh()
+        await self.async_refresh()
 ```
 
 **Step 4: Run tests**
