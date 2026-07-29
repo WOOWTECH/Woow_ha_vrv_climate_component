@@ -29,7 +29,7 @@ from .const import (
     MODE_HA_TO_DEVICE,
     SIGNAL_NEW_IDU,
 )
-from .coordinator import ZhijinglingCoordinator
+from .coordinator import IduState, ZhijinglingCoordinator
 
 
 async def async_setup_entry(
@@ -38,10 +38,15 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coord = entry.runtime_data.coordinator
+    added: set[int] = set()
 
     @callback
     def _add(idu_ids: set[int]) -> None:
-        async_add_entities(ZhijinglingClimate(coord, i) for i in sorted(idu_ids))
+        new = idu_ids - added
+        if not new:
+            return
+        added.update(new)
+        async_add_entities(ZhijinglingClimate(coord, i) for i in sorted(new))
 
     _add(set(coord.data.idus))
     entry.async_on_unload(
@@ -88,7 +93,7 @@ class ZhijinglingClimate(CoordinatorEntity[ZhijinglingCoordinator], ClimateEntit
         )
 
     @property
-    def _idu(self):
+    def _idu(self) -> IduState | None:
         return self.coordinator.data.idus.get(self._idu_id) if self.coordinator.data else None
 
     @property
@@ -97,11 +102,21 @@ class ZhijinglingClimate(CoordinatorEntity[ZhijinglingCoordinator], ClimateEntit
 
     @property
     def min_temp(self) -> float:
+        """Return the minimum settable temperature.
+
+        Falls back to DEFAULT_MIN_TEMP when the gateway reports 0
+        (unset sentinel — no installer-programmed range).
+        """
         gw = self.coordinator.data.gateway if self.coordinator.data else None
         return float(gw.temp_min) if gw and gw.temp_min else DEFAULT_MIN_TEMP
 
     @property
     def max_temp(self) -> float:
+        """Return the maximum settable temperature.
+
+        Falls back to DEFAULT_MAX_TEMP when the gateway reports 0
+        (unset sentinel — no installer-programmed range).
+        """
         gw = self.coordinator.data.gateway if self.coordinator.data else None
         return float(gw.temp_max) if gw and gw.temp_max else DEFAULT_MAX_TEMP
 
