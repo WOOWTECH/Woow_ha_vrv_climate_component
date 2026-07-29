@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.zhijingling_vrv.const import DOMAIN
 
@@ -22,6 +23,13 @@ class _Bad:
 
     def isError(self):  # noqa: N802
         return True
+
+
+class _OkRegistersOutOfRange:
+    registers = [10, 20, 0, 16, 30, 0]  # idu_total=0
+
+    def isError(self):  # noqa: N802
+        return False
 
 
 def _fake_client(*, connect_ok=True, resp=None):
@@ -82,3 +90,40 @@ async def test_user_flow_invalid_device(hass, enable_custom_integrations):
         )
         assert result2["type"] == "form"
         assert result2["errors"] == {"base": "invalid_device"}
+
+
+@pytest.mark.asyncio
+async def test_user_flow_invalid_device_out_of_range(hass, enable_custom_integrations):
+    with patch(
+        "custom_components.zhijingling_vrv.config_flow.AsyncModbusTcpClient",
+        return_value=_fake_client(resp=_OkRegistersOutOfRange()),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result2 = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_HOST: "192.168.2.20", CONF_PORT: 502, "slave_id": 1},
+        )
+        assert result2["type"] == "form"
+        assert result2["errors"] == {"base": "invalid_device"}
+
+
+@pytest.mark.asyncio
+async def test_user_flow_duplicate_aborts(hass, enable_custom_integrations):
+    existing = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="192.168.2.20:502",
+        data={CONF_HOST: "192.168.2.20", CONF_PORT: 502, "slave_id": 1},
+    )
+    existing.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_HOST: "192.168.2.20", CONF_PORT: 502, "slave_id": 1},
+    )
+    assert result2["type"] == "abort"
+    assert result2["reason"] == "already_configured"

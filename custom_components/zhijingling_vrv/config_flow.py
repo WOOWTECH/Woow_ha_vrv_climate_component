@@ -1,16 +1,18 @@
 """Config flow for ZhiJingLing VRV."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from pymodbus.client import AsyncModbusTcpClient
 
 from .const import DEFAULT_PORT, DEFAULT_SLAVE_ID, DOMAIN, MAX_IDUS
+
+_LOGGER = logging.getLogger(__name__)
 
 CONF_SLAVE_ID = "slave_id"
 
@@ -31,7 +33,7 @@ class InvalidDevice(Exception):
     """Raised when the device does not look like a ZhiJingLing gateway."""
 
 
-async def _validate(hass: HomeAssistant, host: str, port: int, slave_id: int) -> None:
+async def _validate(host: str, port: int, slave_id: int) -> None:
     client = AsyncModbusTcpClient(host, port=port, timeout=5)
     try:
         if not await client.connect():
@@ -59,7 +61,6 @@ class ZhijinglingConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             try:
                 await _validate(
-                    self.hass,
                     user_input[CONF_HOST],
                     user_input[CONF_PORT],
                     user_input[CONF_SLAVE_ID],
@@ -69,6 +70,7 @@ class ZhijinglingConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except InvalidDevice:
                 errors["base"] = "invalid_device"
             except Exception:  # noqa: BLE001
+                _LOGGER.exception("Unexpected error validating ZhiJingLing gateway")
                 errors["base"] = "unknown"
             else:
                 return self.async_create_entry(
