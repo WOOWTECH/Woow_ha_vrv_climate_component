@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -142,6 +143,7 @@ class ZhijinglingCoordinator(DataUpdateCoordinator[CoordinatorData]):
                     if state is not None:
                         idus[idu_id] = state
         except Exception as err:
+            _LOGGER.exception("Update failed for %s", self.name)
             raise UpdateFailed(str(err)) from err
 
         current_online = set(idus)
@@ -172,7 +174,7 @@ class ZhijinglingCoordinator(DataUpdateCoordinator[CoordinatorData]):
             parsed = parse_idu_batch(regs, first_idu_id=idu_id, count=1)
             current = parsed[idu_id]
         if current is None:
-            raise RuntimeError(f"IDU {idu_id} offline; cannot write")
+            raise HomeAssistantError(f"IDU {idu_id} offline; cannot write")
 
         payload = [
             on_off if on_off is not None else current.on_off,
@@ -183,5 +185,5 @@ class ZhijinglingCoordinator(DataUpdateCoordinator[CoordinatorData]):
         addr = REG_IDU_WRITE_BASE + idu_id * 4
         resp = await self.client.write_registers(addr, payload, self.slave_id)
         if resp.isError():
-            raise RuntimeError(f"Modbus write {addr} failed: {resp}")
+            raise HomeAssistantError(f"Modbus write {addr} failed: {resp}")
         await self.async_refresh()
