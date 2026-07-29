@@ -122,7 +122,7 @@ class ZhijinglingCoordinator(DataUpdateCoordinator[CoordinatorData]):
 
     async def _read(self, address: int, count: int) -> list[int]:
         resp = await self.client.read_holding_registers(
-            address, count=count, slave=self.slave_id
+            address, count=count, device_id=self.slave_id
         )
         if resp.isError():
             raise UpdateFailed(f"Modbus read {address}+{count} failed: {resp}")
@@ -183,7 +183,7 @@ class ZhijinglingCoordinator(DataUpdateCoordinator[CoordinatorData]):
             fan_speed if fan_speed is not None else current.fan_speed,
         ]
         addr = REG_IDU_WRITE_BASE + idu_id * 4
-        resp = await self.client.write_registers(addr, payload, self.slave_id)
+        resp = await self.client.write_registers(addr, payload, device_id=self.slave_id)
         if resp.isError():
             raise HomeAssistantError(f"Modbus write {addr} failed: {resp}")
         await self.async_refresh()

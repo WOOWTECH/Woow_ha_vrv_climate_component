@@ -439,14 +439,14 @@ def _make_client(*, gateway_meta=None, idu_batches=None, write_ok=True):
     client.connect = AsyncMock(return_value=True)
     client.close = MagicMock()
 
-    async def read_holding_registers(address, *, count, slave):
+    async def read_holding_registers(address, *, count, device_id):
         if address == 2000:
             return _RegResponse(gateway_meta or [1, 1, 2, 16, 30, 0])
         if idu_batches and address in idu_batches:
             return _RegResponse(idu_batches[address])
         return _RegResponse([0] * count)
 
-    async def write_registers(address, values, slave):
+    async def write_registers(address, values, *, device_id):
         return _RegResponse([]) if write_ok else _ErrorResponse()
 
     client.read_holding_registers = AsyncMock(side_effect=read_holding_registers)
@@ -572,7 +572,7 @@ class ZhijinglingCoordinator(DataUpdateCoordinator[CoordinatorData]):
 
     async def _read(self, address: int, count: int) -> list[int]:
         resp = await self.client.read_holding_registers(
-            address, count=count, slave=self.slave_id
+            address, count=count, device_id=self.slave_id
         )
         if resp.isError():
             raise UpdateFailed(f"Modbus read {address}+{count} failed: {resp}")
@@ -632,7 +632,7 @@ class ZhijinglingCoordinator(DataUpdateCoordinator[CoordinatorData]):
             fan_speed if fan_speed is not None else current.fan_speed,
         ]
         addr = REG_IDU_WRITE_BASE + idu_id * 4
-        resp = await self.client.write_registers(addr, payload, self.slave_id)
+        resp = await self.client.write_registers(addr, payload, device_id=self.slave_id)
         if resp.isError():
             raise RuntimeError(f"Modbus write {addr} failed: {resp}")
         await self.async_refresh()
@@ -694,7 +694,7 @@ async def test_live_gateway_write_roundtrip(hass):
     assert await client.connect()
     try:
         coord = ZhijinglingCoordinator(hass, client=client, slave_id=1, entry_id="live")
-        await coord._async_update_data()
+        await coord.async_refresh()
         # Toggle IDU 0 setpoint 22 → 23 → back to original
         original = coord.data.idus[0].set_temp
         await coord.async_write_idu(0, set_temp=23)
