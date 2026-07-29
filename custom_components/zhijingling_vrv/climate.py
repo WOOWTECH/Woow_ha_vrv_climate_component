@@ -62,7 +62,7 @@ class ZhijinglingClimate(CoordinatorEntity[ZhijinglingCoordinator], ClimateEntit
     """One climate entity per IDU."""
 
     _attr_has_entity_name = True
-    _attr_translation_key = "idu"
+    _attr_name = None
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_target_temperature_step = 1
     _attr_hvac_modes = [
@@ -84,7 +84,6 @@ class ZhijinglingClimate(CoordinatorEntity[ZhijinglingCoordinator], ClimateEntit
         super().__init__(coordinator)
         self._idu_id = idu_id
         self._attr_unique_id = f"{coordinator.entry_id}_idu_{idu_id}_climate"
-        self._attr_translation_placeholders = {"idu_id": str(idu_id + 1)}
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{coordinator.entry_id}_idu_{idu_id}")},
             name=f"內機 {idu_id + 1}",

@@ -20,9 +20,6 @@
     }
   },
   "entity": {
-    "climate": {
-      "idu": { "name": "内机 {idu_id}" }
-    },
     "sensor": {
       "idu_total": { "name": "内机总数" },
       "idu_online": { "name": "在线内机数" }

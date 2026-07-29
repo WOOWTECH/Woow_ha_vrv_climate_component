@@ -20,9 +20,6 @@
     }
   },
   "entity": {
-    "climate": {
-      "idu": { "name": "IDU {idu_id}" }
-    },
     "sensor": {
       "idu_total": { "name": "IDU total" },
       "idu_online": { "name": "IDUs online" }
