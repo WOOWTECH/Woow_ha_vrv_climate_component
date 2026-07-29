@@ -943,6 +943,7 @@ from dataclasses import dataclass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from pymodbus.client import AsyncModbusTcpClient
 
 from .config_flow import CONF_SLAVE_ID
@@ -967,12 +968,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZhijinglingConfigEntry) 
 
     client = AsyncModbusTcpClient(host, port=port, timeout=5)
     if not await client.connect():
-        return False
+        raise ConfigEntryNotReady(f"Cannot connect to {host}:{port}")
 
     coordinator = ZhijinglingCoordinator(
         hass, client=client, slave_id=slave_id, entry_id=entry.entry_id
     )
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        client.close()
+        raise
 
     entry.runtime_data = RuntimeData(coordinator=coordinator, client=client)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -981,7 +986,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ZhijinglingConfigEntry) 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ZhijinglingConfigEntry) -> bool:
     ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if ok and entry.runtime_data is not None:
+    if ok:
         entry.runtime_data.client.close()
     return ok
 ```
